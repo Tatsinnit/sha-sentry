@@ -15,6 +15,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Architecture pivoted to reporting-only mode for better security and permissions
 - Complete transformation from modification-based to audit-based approach
 
+## [4.0.0] - 2025-09-16
+
+### Added
+- 🔍 Discover nested workflow files under `.github/workflows/**/*.yml` and `.github/workflows/**/*.yaml` (previously only flat directory patterns were searched).
+- 🧩 Detect composite actions by indexing `action.yml` files under `.github/actions/**/action.yml`.
+- 🎯 Support glob-style exclude patterns (via minimatch) for more precise file exclusions (supports patterns like `docs/**`, `**/*.yml`, `experimental/**`, etc.).
+- 📋 Report excluded files and the matching exclude pattern in the GitHub Actions summary so auditing decisions are explicit and auditable.
+- ⚖️ Case-insensitive matching for YAML file extensions to avoid false-negatives on case-sensitive runners (e.g. `.YML`, `.Yaml`).
+- ✅ Added unit tests specifically covering composite-action discovery and glob-style excludes to prevent regressions.
+
+### Changed
+- ♻️ Broadened workflow discovery to include nested workflows and composite action manifests.
+- 🛠️ Replace simple substring excludes with glob-style matching (minimatch) while keeping a safe substring fallback.
+- 🧾 Enrich generated reports to include excluded files and matched patterns so reviewers can quickly identify why files were skipped.
+- 🔁 Internal improvements to parsing logic and matching to reduce false-negatives when scanning repository-triggered runs.
+
+### Fixed
+- ✅ Correctly detect unpinned actions in workflows that are present in nested directories or use different file-extension casing.
+- 🐛 Avoid false negatives for composite actions and repository-run workflows that weren't previously being scanned.
+
+### Security
+- 🛡️ Increased audit coverage by discovering more workflow/action files; improves supply-chain visibility and reduces attack surface.
+
 ## [3.0.0] - 2025-09-16
 
 - 📊 **Remove unwanted skip**: RRemoved `{{` 
@@ -83,6 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensures reproducible builds across environments
 - Follows GitHub Actions security best practices
 
-[unreleased]: https://github.com/Tatsinnit/sha-sentry/compare/v2.0.0...HEAD
+[unreleased]: https://github.com/Tatsinnit/sha-sentry/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v4.0.0
+[3.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v3.0.0
 [2.0.0]: https://github.com/Tatsinnit/sha-sentry/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v1.0.0
