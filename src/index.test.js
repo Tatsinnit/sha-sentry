@@ -32,7 +32,7 @@ jest.mock('glob', () => ({
 }));
 
 jest.mock('yaml', () => ({
-  parseDocument: jest.fn()
+  parse: jest.fn()
 }));
 
 describe('ShaSentry', () => {
@@ -113,7 +113,7 @@ jobs:
           }
         }
       };
-      mockYaml.parseDocument.mockReturnValue({ contents: mockYamlContents });
+      mockYaml.parse.mockReturnValue(mockYamlContents);
       
       // Mock GitHub API responses for SHA resolution
       mockOctokit.rest.repos.listTags.mockResolvedValue({
@@ -167,7 +167,7 @@ jobs:
           }
         }
       };
-      mockYaml.parseDocument.mockReturnValue({ contents: mockYamlContents });
+      mockYaml.parse.mockReturnValue(mockYamlContents);
       
       const shaSentry = new ShaSentry();
       await shaSentry.run();
@@ -361,7 +361,7 @@ jobs:
     it('should handle YAML parsing errors', async () => {
       mockGlob.mockResolvedValue(['/test/.github/workflows/invalid.yml']);
       mockFs.readFile.mockResolvedValue('invalid: yaml: content: [');
-      mockYaml.parseDocument.mockImplementation(() => {
+      mockYaml.parse.mockImplementation(() => {
         throw new Error('Invalid YAML');
       });
       

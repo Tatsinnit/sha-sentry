@@ -115,14 +115,15 @@ class ShaSentry {
       core.info(`🔍 Scanning: ${filePath.replace(process.cwd() + '/', '')}`);
       
       const content = await fs.readFile(filePath, 'utf8');
-      const doc = yaml.parseDocument(content);
+      // Parse YAML to a plain JavaScript object for easier traversal
+      const doc = yaml.parse(content);
       
       // Track line numbers for better reporting
       const lines = content.split('\n');
       const fileFindings = [];
       
       // Find all 'uses' statements in the YAML
-      await this.findUsesStatements(doc.contents, lines, filePath, fileFindings);
+      await this.findUsesStatements(doc, lines, filePath, fileFindings);
       
       if (fileFindings.length > 0) {
         this.findings.push({
