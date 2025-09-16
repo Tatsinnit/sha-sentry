@@ -1,251 +1,201 @@
-# SHA Sentry 🛡️
+# SHA Sentry 🔍
 
 [![GitHub release](https://img.shields.io/github/release/Tatsinnit/sha-sentry.svg)](https://github.com/Tatsinnit/sha-sentry/releases)
 [![GitHub marketplace](https://img.shields.io/badge/marketplace-sha--sentry-blue?logo=github)](https://github.com/marketplace/actions/sha-sentry)
 [![CI](https://github.com/Tatsinnit/sha-sentry/workflows/CI/badge.svg)](https://github.com/Tatsinnit/sha-sentry/actions)
 
-A GitHub Action that automatically SHA-pins all GitHub Actions in your workflow files for enhanced security and reproducible builds. Say goodbye to supply chain attacks and hello to security best practices! 🚀
+A GitHub Action that **scans and reports** unpinned GitHub Actions in your workflow files with detailed SHA recommendations. Perfect for security audits and compliance checks! 🛡️
 
 ## 🌟 Why SHA Sentry?
 
-- **🔒 Enhanced Security**: Prevents supply chain attacks by pinning actions to specific commit SHAs
-- **🔄 Reproducible Builds**: Ensures your workflows always use the exact same action versions
-- **🤖 Automated**: No manual work required - just run the action and it handles everything
-- **💬 Maintains Context**: Adds comments with original references for easy maintenance
-- **🛡️ Safe**: Supports dry-run mode and can create pull requests for review
-- **⚙️ Configurable**: Exclude patterns, custom commit messages, and more
+- **🔍 Security Audit**: Identifies all unpinned actions that could be security risks
+- **📋 Detailed Reports**: Provides exact SHA commits for each unpinned action  
+- **🎯 Precise Recommendations**: Shows you exactly what to change and where
+- **⚡ Zero Risk**: Only scans and reports - never modifies your files
+- **🏃‍♂️ Easy Setup**: Works with default GitHub token, no special permissions needed
+- **📊 Comprehensive**: Scans all workflow files and action.yml files
 
 ## 🚀 Quick Start
 
-**Important**: To process workflow files (the main purpose of SHA Sentry), you need a Personal Access Token.
-
-### Step 1: Create Personal Access Token
-1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. Generate new token with `repo` and `workflow` scopes
-3. Add as repository secret named `PAT_TOKEN`
-
-### Step 2: Add Workflow
-Create `.github/workflows/sha-sentry.yml`:
+Add this workflow to your repository (`.github/workflows/sha-audit.yml`):
 
 ```yaml
-name: SHA Pin Actions
+name: SHA Security Audit
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: '0 0 * * 1'  # Weekly on Monday
   workflow_dispatch:      # Manual trigger
 
 jobs:
-  sha-pin:
+  security-audit:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read    # Only read access needed
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: SHA Pin Actions in Workflows
-        uses: Tatsinnit/sha-sentry@v1
+      - name: Run SHA Sentry Audit
+        uses: Tatsinnit/sha-sentry@v3
         with:
-          github_token: ${{ secrets.PAT_TOKEN }}  # Required for workflow files
-          create_pr: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## 📋 What You Get
+
+When SHA Sentry runs, it provides:
+
+### 📊 Console Output
+```
+🔍 Starting SHA Sentry - scanning for unpinned actions...
+📁 Found 3 workflow files to scan
+🔍 Scanning: .github/workflows/ci.yml
+🔍 Found unpinned action: actions/checkout@v4
+🎯 Resolved to SHA: 8aca7672a9e6a874d8faa6b8f98a5212554c65cd
+📄 File: .github/workflows/ci.yml
+  ⚠️  actions/checkout@v4 → actions/checkout@8aca7672a9e6a874d8faa6b8f98a5212554c65cd (line 15)
+
+💡 Next Steps:
+  1. Review the actions above
+  2. Manually update your workflow files with the SHA-pinned versions
+  3. Add comments to preserve the original version references
+  4. Test your workflows to ensure they still work correctly
+```
+
+### 📋 Detailed GitHub Summary Report
+A comprehensive markdown report in the Actions summary with:
+- File-by-file breakdown
+- Line numbers for each finding
+- Before/after code examples
+- Copy-paste ready SHA-pinned versions
 
 ## 📋 Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `github_token` | GitHub token for API access | ✅ | `${{ github.token }}` |
-| `commit_message` | Commit message for changes | ❌ | `chore: SHA-pin GitHub Actions for security` |
-| `create_pr` | Create pull request instead of direct commit | ❌ | `false` |
-| `pr_title` | Pull request title | ❌ | `chore: SHA-pin GitHub Actions for security` |
-| `pr_body` | Pull request body | ❌ | Auto-generated description |
 | `exclude_patterns` | Comma-separated patterns to exclude | ❌ | `''` |
-| `dry_run` | Show changes without applying them | ❌ | `false` |
 
 ## 📤 Outputs
 
 | Output | Description |
 |--------|-------------|
-| `changes_made` | Whether any changes were made |
-| `files_updated` | Number of workflow files updated |
-| `actions_pinned` | Number of actions that were SHA-pinned |
-| `pr_number` | Pull request number (if created) |
+| `files_scanned` | Number of workflow files scanned |
+| `total_actions` | Total number of actions found |
+| `unpinned_actions_found` | Number of unpinned actions discovered |
+| `findings` | JSON array of detailed findings |
 
-## 📖 Usage Examples
+## 🔧 Example Usage Scenarios
 
-### Basic Usage (Direct Commit)
-
+### Basic Security Audit
 ```yaml
-- name: SHA Pin Actions
+- name: Security Audit
+  uses: Tatsinnit/sha-sentry@v1
+```
+
+### Exclude Certain Files
+```yaml
+- name: Audit Core Workflows Only
   uses: Tatsinnit/sha-sentry@v1
   with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
+    exclude_patterns: "docs/,.github/workflows/experimental"
 ```
 
-### Create Pull Request
-
+### Use in Matrix Strategy
 ```yaml
-- name: SHA Pin Actions
-  uses: Tatsinnit/sha-sentry@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    create_pr: true
-    pr_title: "🔒 Security: SHA-pin GitHub Actions"
-    pr_body: |
-      This PR SHA-pins all GitHub Actions for enhanced security.
-      
-      - ✅ Prevents supply chain attacks
-      - ✅ Ensures reproducible builds
-      - ✅ Follows security best practices
-```
-
-### Dry Run Mode
-
-```yaml
-- name: Check SHA Pinning
-  uses: Tatsinnit/sha-sentry@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    dry_run: true
-```
-
-### Exclude Specific Actions
-
-```yaml
-- name: SHA Pin Actions
-  uses: Tatsinnit/sha-sentry@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    exclude_patterns: "actions/checkout,actions/setup-node"
-```
-
-## 🔄 Before and After
-
-**Before (vulnerable to supply chain attacks):**
-```yaml
-- uses: actions/checkout@v4
-- uses: actions/setup-node@v3
-- uses: docker/build-push-action@v5
-```
-
-**After (secure and reproducible):**
-```yaml
-- uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
-- uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v3
-- uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # v5
-```
-
-## 🛡️ Security Features
-
-### What Gets Pinned?
-- ✅ Tag references (`actions/checkout@v4` → `actions/checkout@8ade135a...`)
-- ✅ Branch references (`actions/checkout@main` → `actions/checkout@8ade135a...`)
-- ✅ Partial SHA references (`actions/checkout@8ade135` → `actions/checkout@8ade135a...`)
-
-### What Doesn't Get Pinned?
-- ❌ Already full SHA-pinned actions (40 characters)
-- ❌ Local actions (starting with `./`)
-- ❌ Actions matching exclude patterns
-
-## 🔧 Advanced Configuration
-
-### Custom Commit Message
-```yaml
-- uses: Tatsinnit/sha-sentry@v1
-  with:
-    commit_message: "security: pin all GitHub Actions to SHA commits"
-```
-
-### Multiple Exclude Patterns
-```yaml
-- uses: Tatsinnit/sha-sentry@v1
-  with:
-    exclude_patterns: "actions/checkout,actions/setup-node,docker/*"
-```
-
-## 🔍 Permissions Required
-
-SHA Sentry is designed to SHA-pin actions in workflow files. The default `GITHUB_TOKEN` cannot modify workflows for security reasons.
-
-### **Required Setup (Personal Access Token):**
-
-1. **Create a Personal Access Token:**
-   - Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)
-   - Click "Generate new token (classic)"
-   - Select scopes: `repo` and `workflow`
-   - Copy the generated token
-
-2. **Add PAT as Repository Secret:**
-   - Go to your repository Settings > Secrets and variables > Actions
-   - Click "New repository secret"
-   - Name: `PAT_TOKEN`
-   - Value: Your PAT token
-
-3. **Use in Workflow:**
-```yaml
-permissions:
-  contents: write
-  pull-requests: write
-
+strategy:
+  matrix:
+    directory: ['frontend', 'backend', 'scripts']
 steps:
-  - uses: Tatsinnit/sha-sentry@v1
+  - name: Audit ${{ matrix.directory }}
+    uses: Tatsinnit/sha-sentry@v1
     with:
-      github_token: ${{ secrets.PAT_TOKEN }}  # Required for workflow files
-      create_pr: true
+      exclude_patterns: "${{ matrix.directory == 'frontend' && 'backend,scripts' || matrix.directory == 'backend' && 'frontend,scripts' || 'frontend,backend' }}"
 ```
 
-### **Why PAT is Required:**
-- Workflow files contain the security-critical automation logic
-- GitHub prevents the default token from modifying workflows to prevent privilege escalation
-- SHA-pinning workflows requires the `workflow` permission that only PATs have
+## 🔒 Security Benefits
 
-### **Fallback - Skip Workflows (Not Recommended):**
-Only use this if you cannot create a PAT:
+SHA-pinning your actions prevents supply chain attacks where malicious actors could:
+
+### 🚫 Without SHA Pinning
 ```yaml
-- uses: Tatsinnit/sha-sentry@v1
-  with:
-    exclude_patterns: ".github/workflows"  # Defeats the main purpose
+uses: actions/checkout@v4  # ⚠️ Vulnerable - tag can be moved
 ```
+- Attacker pushes malicious code to the `v4` tag
+- Your workflow uses the compromised action
+- Security breach in your repository
+
+### ✅ With SHA Pinning  
+```yaml
+uses: actions/checkout@8aca7672a9e6a874d8faa6b8f98a5212554c65cd  # v4 ✅ Secure
+```
+- Action is pinned to a specific commit
+- Attacker cannot modify that specific SHA
+- Your workflow is protected against supply chain attacks
+
+## 📁 What Gets Scanned
+
+SHA Sentry automatically finds and analyzes:
+- `.github/workflows/*.yml`
+- `.github/workflows/*.yaml` 
+- `action.yml` (composite actions)
+- `action.yaml` (composite actions)
+
+## 🎯 Manual Implementation Guide
+
+After running SHA Sentry, follow these steps to implement the recommendations:
+
+### 1. Review the Report
+Check the Actions summary tab for the detailed breakdown.
+
+### 2. Update Your Files
+Replace unpinned actions with SHA-pinned versions:
+
+```yaml
+# Before (from SHA Sentry report)
+uses: actions/setup-node@v4
+
+# After (copy from SHA Sentry recommendations)  
+uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4
+```
+
+### 3. Add Comments
+Always include the original version as a comment:
+```yaml
+uses: actions/checkout@8aca7672a9e6a874d8faa6b8f98a5212554c65cd  # v4
+```
+
+### 4. Test Your Workflows
+Run your workflows to ensure they still work correctly after pinning.
 
 ## 🏃‍♂️ Running Locally
 
-You can test the action locally:
+Test SHA Sentry on your local repository:
 
 ```bash
 # Install dependencies
 npm install
 
-# Set environment variables
-export GITHUB_TOKEN="your-token"
-export DRY_RUN="true"
+# Set your GitHub token
+export GITHUB_TOKEN="your-personal-access-token"
 
-# Run the action
+# Run the scanner
 node src/index.js
 ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+Contributions welcome! Please:
+1. 🍴 Fork the repository
+2. 🌱 Create a feature branch
+3. 📝 Add tests for your changes  
+4. ✅ Ensure all tests pass
+5. 📤 Submit a pull request
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙋‍♂️ Support
+## 🙏 Credits
 
-- 📖 [Documentation](https://github.com/Tatsinnit/sha-sentry/wiki)
-- 🐛 [Report Issues](https://github.com/Tatsinnit/sha-sentry/issues)
-- 💬 [Discussions](https://github.com/Tatsinnit/sha-sentry/discussions)
-
----
-
-**Made with ❤️ for supply chain security**
-
-> ⚠️ **Security Note**: Always review the changes made by this action, especially in production environments. While SHA-pinning enhances security, it's important to understand what each pinned action does.
+Created with ❤️ for the open source community. Special thanks to all contributors and the GitHub security team for their continued efforts to improve action security.

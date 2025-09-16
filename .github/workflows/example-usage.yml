@@ -1,112 +1,81 @@
-name: Example SHA Sentry Usage
+name: SHA Sentry Security Audit
 
 on:
   schedule:
-    # Run every Sunday at midnight UTC
-    - cron: '0 0 * * 0'
+    # Run every Monday at 9 AM UTC for weekly security audits
+    - cron: '0 9 * * 1'
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Run in dry-run mode'
+      exclude_patterns:
+        description: 'Comma-separated patterns to exclude from scan'
         required: false
-        default: false
-        type: boolean
-      create_pr:
-        description: 'Create pull request instead of direct commit'
-        required: false
-        default: true
-        type: boolean
+        default: ''
+        type: string
 
 permissions:
-  contents: write
-  pull-requests: write
-  # Note: actions: write is NOT sufficient for workflow files
+  contents: read  # Only read access needed for scanning
 
 jobs:
-  sha-pin-actions:
+  security-audit:
     runs-on: ubuntu-latest
-    name: SHA Pin GitHub Actions
+    name: Scan for Unpinned Actions
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Use PAT token for workflow file access
-          token: ${{ secrets.PAT_TOKEN }}
-          fetch-depth: 0
+          fetch-depth: 1  # Shallow clone for faster checkout
       
-      - name: Run SHA Sentry (Primary Purpose - Workflow Files)
-        id: sha_sentry
+      - name: Run SHA Sentry Security Scan
+        id: sha_audit
         uses: ./  # Use the action from current repository
         with:
-          # REQUIRED: PAT with workflow permissions to process .github/workflows/
-          github_token: ${{ secrets.PAT_TOKEN }}
-          create_pr: ${{ github.event.inputs.create_pr || 'true' }}
-          dry_run: ${{ github.event.inputs.dry_run || 'false' }}
-          pr_title: '🔒 Security: SHA-pin GitHub Actions in Workflows'
-          pr_body: |
-            This pull request automatically SHA-pins all GitHub Actions in workflow files for enhanced security.
-            
-            ## 🛡️ Security Benefits
-            - ✅ Prevents supply chain attacks via tag manipulation
-            - ✅ Ensures reproducible builds with fixed commits
-            - ✅ Follows GitHub security best practices
-            
-            ## 📊 Changes Made
-            - **Files Updated**: ${{ steps.sha_sentry.outputs.files_updated }}
-            - **Actions Pinned**: ${{ steps.sha_sentry.outputs.actions_pinned }}
-            
-            ## 🔍 What Was Pinned
-            Examples of changes made:
-            - `actions/checkout@v4` → `actions/checkout@8aca7672a9e6a874d8faa6b8f98a5212554c65cd`
-            - `actions/setup-node@v4` → `actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7`
-            
-            ---
-            *This PR was created automatically by [SHA Sentry](https://github.com/Tatsinnit/sha-sentry)*
-          commit_message: '🔒 chore: SHA-pin GitHub Actions in workflows for enhanced security'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          exclude_patterns: ${{ github.event.inputs.exclude_patterns }}
       
-      - name: Print Summary
+      - name: Display Audit Summary
         if: always()
         run: |
-          echo "## SHA Sentry Results 📊" >> $GITHUB_STEP_SUMMARY
+          echo "## 🛡️ SHA Sentry Security Audit Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Changes Made**: ${{ steps.sha_sentry.outputs.changes_made }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Files Updated**: ${{ steps.sha_sentry.outputs.files_updated }}" >> $GITHUB_STEP_SUMMARY  
-          echo "- **Actions Pinned**: ${{ steps.sha_sentry.outputs.actions_pinned }}" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "${{ steps.sha_sentry.outputs.pr_number }}" != "" ]; then
-            echo "- **Pull Request**: #${{ steps.sha_sentry.outputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 📁 Files Scanned | ${{ steps.sha_audit.outputs.files_scanned }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎯 Total Actions Found | ${{ steps.sha_audit.outputs.total_actions }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚠️ Unpinned Actions | ${{ steps.sha_audit.outputs.unpinned_actions_found }} |" >> $GITHUB_STEP_SUMMARY
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.sha_sentry.outputs.changes_made }}" == "true" ]; then
-            echo "✅ **Status**: Actions successfully pinned!" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.sha_audit.outputs.unpinned_actions_found }}" -eq "0" ]; then
+            echo "🎉 **Excellent!** All actions are properly SHA-pinned!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Your repository follows security best practices by pinning all GitHub Actions to specific SHA commits." >> $GITHUB_STEP_SUMMARY
           else
-            echo "ℹ️ **Status**: No changes needed - all actions already pinned" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Action Required:** Found ${{ steps.sha_audit.outputs.unpinned_actions_found }} unpinned actions that need attention." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### � Next Steps:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Review the detailed findings in the full report above" >> $GITHUB_STEP_SUMMARY
+            echo "2. Update workflow files with the recommended SHA-pinned versions" >> $GITHUB_STEP_SUMMARY
+            echo "3. Add comments to preserve version references (e.g., \`# v4\`)" >> $GITHUB_STEP_SUMMARY
+            echo "4. Test your workflows after making changes" >> $GITHUB_STEP_SUMMARY
           fi
       
-      - name: Comment on PR (if created)
-        if: steps.sha_sentry.outputs.pr_number != ''
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = ${{ steps.sha_sentry.outputs.pr_number }};
-            const comment = `
-            ## 🤖 SHA Sentry Report
-            
-            Successfully pinned **${{ steps.sha_sentry.outputs.actions_pinned }}** actions across **${{ steps.sha_sentry.outputs.files_updated }}** workflow files.
-            
-            ### What's Next?
-            1. 👀 Review the changes in this PR
-            2. ✅ Verify all pinned actions are from trusted sources  
-            3. 🚀 Merge to apply the security improvements
-            
-            *This comment was generated automatically by SHA Sentry*
-            `;
-            
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: comment
-            });
+      - name: Security Compliance Check
+        if: steps.sha_audit.outputs.unpinned_actions_found != '0'
+        run: |
+          echo "❌ Security compliance check failed!"
+          echo "Found ${{ steps.sha_audit.outputs.unpinned_actions_found }} unpinned actions that pose security risks."
+          echo ""
+          echo "🔍 Review the detailed report in the Actions summary for specific recommendations."
+          echo ""
+          echo "💡 Pro tip: SHA-pinning prevents supply chain attacks by ensuring"
+          echo "   actions cannot be modified by malicious actors after publication."
+          exit 1
+      
+      - name: Success Notification
+        if: steps.sha_audit.outputs.unpinned_actions_found == '0'
+        run: |
+          echo "✅ Security audit passed!"
+          echo "All ${{ steps.sha_audit.outputs.total_actions }} actions across ${{ steps.sha_audit.outputs.files_scanned }} files are properly SHA-pinned."
+          echo ""
+          echo "🛡️ Your repository follows GitHub security best practices!"
