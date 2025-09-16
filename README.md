@@ -32,6 +32,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write      # Required to modify workflow files
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -164,6 +165,7 @@ The action needs the following permissions:
 permissions:
   contents: write        # To commit changes or create branches
   pull-requests: write   # To create pull requests (if create_pr: true)
+  actions: write         # To modify workflow files (recommended)
 ```
 
 ## 🏃‍♂️ Running Locally

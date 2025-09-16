@@ -47,6 +47,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write      # Required to modify workflow files
     steps:
       - uses: actions/checkout@v4
       - uses: Tatsinnit/sha-sentry@v1

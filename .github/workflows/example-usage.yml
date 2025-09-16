@@ -20,6 +20,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write      # Required to modify workflow files
 
 jobs:
   sha-pin-actions:
@@ -60,7 +61,7 @@ jobs:
             
             ---
             *This PR was created automatically by [SHA Sentry](https://github.com/Tatsinnit/sha-sentry)*
-          exclude_patterns: 'actions/checkout@v4'  # Example: exclude specific actions
+          exclude_patterns: 'actions/checkout@v4'  # Example: exclude specific actions if needed
           commit_message: '🔒 chore: SHA-pin GitHub Actions for enhanced security'
       
       - name: Print Summary
