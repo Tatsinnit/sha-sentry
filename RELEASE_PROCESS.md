@@ -140,14 +140,16 @@ The `.github/workflows/release.yml` workflow:
 Users can reference your action in three ways:
 
 ```yaml
-# Recommended: Major version (gets latest patches/features)
-- uses: your-org/sha-sentry@v1
+```yaml
+# Major version (v1) - always points to latest v1.x.x
+- uses: Tatsinnit/sha-sentry@v1
 
-# Specific version (completely reproducible)
-- uses: your-org/sha-sentry@v1.2.3
+# Specific version (recommended for production)
+- uses: Tatsinnit/sha-sentry@v1.2.3
 
-# Latest (not recommended for production)
-- uses: your-org/sha-sentry@main
+# Development/testing (not recommended for production)
+- uses: Tatsinnit/sha-sentry@main
+```
 ```
 
 ## Pre-Release Versions
@@ -260,8 +262,8 @@ git status  # Should be clean
 # Push to trigger release
 git push origin main && git push origin v1.2.0
 
-# Monitor at: https://github.com/your-org/sha-sentry/actions
-# Release available at: https://github.com/your-org/sha-sentry/releases
+# Monitor at: https://github.com/Tatsinnit/sha-sentry/actions
+# Release available at: https://github.com/Tatsinnit/sha-sentry/releases
 ```
 
 That's it! Your SHA Sentry action is now properly versioned and released following industry best practices. 🎉

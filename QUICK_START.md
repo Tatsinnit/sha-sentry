@@ -49,7 +49,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: your-org/sha-sentry@v1
+      - uses: Tatsinnit/sha-sentry@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_pr: true

@@ -1,8 +1,8 @@
 # SHA Sentry 🛡️
 
-[![GitHub release](https://img.shields.io/github/release/your-org/sha-sentry.svg)](https://github.com/your-org/sha-sentry/releases)
+[![GitHub release](https://img.shields.io/github/release/Tatsinnit/sha-sentry.svg)](https://github.com/Tatsinnit/sha-sentry/releases)
 [![GitHub marketplace](https://img.shields.io/badge/marketplace-sha--sentry-blue?logo=github)](https://github.com/marketplace/actions/sha-sentry)
-[![CI](https://github.com/your-org/sha-sentry/workflows/CI/badge.svg)](https://github.com/your-org/sha-sentry/actions)
+[![CI](https://github.com/Tatsinnit/sha-sentry/workflows/CI/badge.svg)](https://github.com/Tatsinnit/sha-sentry/actions)
 
 A GitHub Action that automatically SHA-pins all GitHub Actions in your workflow files for enhanced security and reproducible builds. Say goodbye to supply chain attacks and hello to security best practices! 🚀
 
@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: SHA Pin Actions
-        uses: your-org/sha-sentry@v1
+        uses: Tatsinnit/sha-sentry@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_pr: true
@@ -70,7 +70,7 @@ jobs:
 
 ```yaml
 - name: SHA Pin Actions
-  uses: your-org/sha-sentry@v1
+  uses: Tatsinnit/sha-sentry@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -79,7 +79,7 @@ jobs:
 
 ```yaml
 - name: SHA Pin Actions
-  uses: your-org/sha-sentry@v1
+  uses: Tatsinnit/sha-sentry@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     create_pr: true
@@ -96,7 +96,7 @@ jobs:
 
 ```yaml
 - name: Check SHA Pinning
-  uses: your-org/sha-sentry@v1
+  uses: Tatsinnit/sha-sentry@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     dry_run: true
@@ -106,7 +106,7 @@ jobs:
 
 ```yaml
 - name: SHA Pin Actions
-  uses: your-org/sha-sentry@v1
+  uses: Tatsinnit/sha-sentry@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     exclude_patterns: "actions/checkout,actions/setup-node"
@@ -144,14 +144,14 @@ jobs:
 
 ### Custom Commit Message
 ```yaml
-- uses: your-org/sha-sentry@v1
+- uses: Tatsinnit/sha-sentry@v1
   with:
     commit_message: "security: pin all GitHub Actions to SHA commits"
 ```
 
 ### Multiple Exclude Patterns
 ```yaml
-- uses: your-org/sha-sentry@v1
+- uses: Tatsinnit/sha-sentry@v1
   with:
     exclude_patterns: "actions/checkout,actions/setup-node,docker/*"
 ```
@@ -198,9 +198,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🙋‍♂️ Support
 
-- 📖 [Documentation](https://github.com/your-org/sha-sentry/wiki)
-- 🐛 [Report Issues](https://github.com/your-org/sha-sentry/issues)
-- 💬 [Discussions](https://github.com/your-org/sha-sentry/discussions)
+- 📖 [Documentation](https://github.com/Tatsinnit/sha-sentry/wiki)
+- 🐛 [Report Issues](https://github.com/Tatsinnit/sha-sentry/issues)
+- 💬 [Discussions](https://github.com/Tatsinnit/sha-sentry/discussions)
 
 ---
 

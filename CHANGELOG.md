@@ -37,5 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensures reproducible builds across environments
 - Follows GitHub Actions security best practices
 
-[unreleased]: https://github.com/your-org/sha-sentry/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/your-org/sha-sentry/releases/tag/v1.0.0
+[unreleased]: https://github.com/Tatsinnit/sha-sentry/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v1.0.0

@@ -25,7 +25,7 @@ Before creating a release, update version numbers in relevant files:
 
 **README.md examples:**
 ```yaml
-- uses: your-org/sha-sentry@v1.2.3
+- uses: Tatsinnit/sha-sentry@v1.2.3
 ```
 
 ### 2. Update CHANGELOG
@@ -209,7 +209,7 @@ git tag v1.3.0-rc.1
 - Updated dependencies to latest versions
 - Improved test coverage
 
-**Full Changelog**: https://github.com/your-org/sha-sentry/compare/v1.1.0...v1.2.0
+**Full Changelog**: https://github.com/Tatsinnit/sha-sentry/compare/v1.1.0...v1.2.0
 ```
 
 ## Testing Releases

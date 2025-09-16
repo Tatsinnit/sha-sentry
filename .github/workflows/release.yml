@@ -61,7 +61,7 @@ jobs:
           
           ```yaml
           - name: SHA Pin Actions
-            uses: your-org/sha-sentry@${{ steps.version.outputs.version }}
+            uses: Tatsinnit/sha-sentry@${{ steps.version.outputs.version }}
             with:
               github_token: ${{ secrets.GITHUB_TOKEN }}
               create_pr: true

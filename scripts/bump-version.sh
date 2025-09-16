@@ -89,7 +89,7 @@ sed -i '' "s/## \[Unreleased\]/## [Unreleased]\n\n## [$NEW_VERSION] - $TODAY/" C
 
 # Update changelog links
 MAJOR_VERSION=$(echo $NEW_VERSION | cut -d. -f1)
-sed -i '' "s|\[unreleased\]: .*|\[unreleased\]: https://github.com/your-org/sha-sentry/compare/v$NEW_VERSION...HEAD\n[$NEW_VERSION]: https://github.com/your-org/sha-sentry/compare/v$CURRENT_VERSION...v$NEW_VERSION|" CHANGELOG.md
+sed -i '' "s|\[unreleased\]: .*|\[unreleased\]: https://github.com/Tatsinnit/sha-sentry/compare/v$NEW_VERSION...HEAD\n[$NEW_VERSION]: https://github.com/Tatsinnit/sha-sentry/compare/v$CURRENT_VERSION...v$NEW_VERSION|" CHANGELOG.md
 
 print_success "Files updated successfully!"
 
@@ -110,7 +110,7 @@ print_success "Version bumped to v$NEW_VERSION!"
 print_status "Next steps:"
 echo "  1. Review the changes: git show"
 echo "  2. Push to trigger release: git push origin main && git push origin v$NEW_VERSION"
-echo "  3. Check the release workflow: https://github.com/your-org/sha-sentry/actions"
+echo "  3. Check the release workflow: https://github.com/Tatsinnit/sha-sentry/actions"
 echo ""
 print_warning "The release workflow will automatically:"
 echo "  • Run tests and linting"

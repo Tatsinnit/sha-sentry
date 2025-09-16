@@ -59,7 +59,7 @@ jobs:
             Please review the changes to ensure all pinned actions are correct and from trusted sources.
             
             ---
-            *This PR was created automatically by [SHA Sentry](https://github.com/your-org/sha-sentry)*
+            *This PR was created automatically by [SHA Sentry](https://github.com/Tatsinnit/sha-sentry)*
           exclude_patterns: 'actions/checkout@v4'  # Example: exclude specific actions
           commit_message: '🔒 chore: SHA-pin GitHub Actions for enhanced security'
       
