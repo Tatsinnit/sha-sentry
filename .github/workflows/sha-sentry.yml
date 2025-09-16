@@ -17,5 +17,4 @@ jobs:
       - name: SHA Pin Actions
         uses: Tatsinnit/sha-sentry@v3
         with:
-          github_token: ${{ secrets.PAT_TOKEN }}
-          create_pr: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
