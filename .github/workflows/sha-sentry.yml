@@ -1,0 +1,21 @@
+name: SHA Pin Actions
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  sha-pin:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: SHA Pin Actions
+        uses: Tatsinnit/sha-sentry@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          create_pr: true
