@@ -1,0 +1,96 @@
+name: 'SHA Sentry'
+description: 'Automatically SHA-pin all GitHub Actions in workflow files for enhanced security'
+author: 'SHA Sentry Action'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+    default: ${{ github.token }}
+  
+  commit_message:
+    description: 'Commit message for the SHA pinning changes'
+    required: false
+    default: 'chore: SHA-pin GitHub Actions for security'
+  
+  create_pr:
+    description: 'Whether to create a pull request instead of committing directly'
+    required: false
+    default: 'false'
+  
+  pr_title:
+    description: 'Title for the pull request (if create_pr is true)'
+    required: false
+    default: 'chore: SHA-pin GitHub Actions for security'
+  
+  pr_body:
+    description: 'Body for the pull request (if create_pr is true)'
+    required: false
+    default: |
+      This pull request SHA-pins all GitHub Actions in workflow files to their corresponding commit hashes for enhanced security.
+      
+      **Changes:**
+      - Replaced tag/branch references with SHA hashes
+      - Added comments with original references for maintainability
+      
+      **Benefits:**
+      - Prevents supply chain attacks
+      - Ensures reproducible builds
+      - Improves security posture
+  
+  exclude_patterns:
+    description: 'Comma-separated list of action patterns to exclude from SHA pinning'
+    required: false
+    default: ''
+  
+  dry_run:
+    description: 'Only show what would be changed without making actual changes'
+    required: false
+    default: 'false'
+
+outputs:
+  changes_made:
+    description: 'Whether any changes were made to workflow files'
+    value: ${{ steps.sha_pin.outputs.changes_made }}
+  
+  files_updated:
+    description: 'Number of workflow files that were updated'
+    value: ${{ steps.sha_pin.outputs.files_updated }}
+  
+  actions_pinned:
+    description: 'Number of actions that were SHA-pinned'
+    value: ${{ steps.sha_pin.outputs.actions_pinned }}
+  
+  pr_number:
+    description: 'Pull request number (if create_pr is true and PR was created)'
+    value: ${{ steps.sha_pin.outputs.pr_number }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      with:
+        node-version: '20'
+    
+    - name: Install dependencies
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        npm ci --only=production
+    
+    - name: Run SHA Sentry
+      id: sha_pin
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        CREATE_PR: ${{ inputs.create_pr }}
+        PR_TITLE: ${{ inputs.pr_title }}
+        PR_BODY: ${{ inputs.pr_body }}
+        EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
+        DRY_RUN: ${{ inputs.dry_run }}
+      run: node ${{ github.action_path }}/src/index.js

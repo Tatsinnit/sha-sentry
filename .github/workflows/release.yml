@@ -1,0 +1,129 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Extract major version
+        id: major_version
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          major_version=$(echo $version | sed 's/v\([0-9]*\).*/v\1/')
+          echo "major_version=$major_version" >> $GITHUB_OUTPUT
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Extract changelog for this version
+          version="${{ steps.version.outputs.version }}"
+          
+          # Create release notes
+          cat > release_notes.md << 'EOF'
+          ## 🛡️ SHA Sentry ${{ steps.version.outputs.version }}
+          
+          A GitHub Action that automatically SHA-pins all GitHub Actions in workflow files for enhanced security.
+          
+          ### 🚀 Quick Start
+          
+          ```yaml
+          - name: SHA Pin Actions
+            uses: your-org/sha-sentry@${{ steps.version.outputs.version }}
+            with:
+              github_token: ${{ secrets.GITHUB_TOKEN }}
+              create_pr: true
+          ```
+          
+          ### 📋 What's Included
+          
+          - ✅ Automatic workflow file discovery
+          - ✅ SHA resolution via GitHub API  
+          - ✅ Smart comment preservation
+          - ✅ Pull request creation
+          - ✅ Dry-run support
+          - ✅ Configurable exclude patterns
+          
+          ### 📖 Documentation
+          
+          - [README.md](https://github.com/${{ github.repository }}/blob/${{ steps.version.outputs.version }}/README.md) - Complete usage guide
+          - [QUICK_START.md](https://github.com/${{ github.repository }}/blob/${{ steps.version.outputs.version }}/QUICK_START.md) - Quick start guide
+          - [RELEASE_GUIDE.md](https://github.com/${{ github.repository }}/blob/${{ steps.version.outputs.version }}/RELEASE_GUIDE.md) - Release process
+          
+          ### 🔒 Security Benefits
+          
+          - Prevents supply chain attacks
+          - Ensures reproducible builds
+          - Follows GitHub security best practices
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v1.0.0...${{ steps.version.outputs.version }}
+          EOF
+          
+          echo "notes_file=release_notes.md" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: ${{ steps.version.outputs.version }}
+          body_path: ${{ steps.release_notes.outputs.notes_file }}
+          draft: false
+          prerelease: false
+      
+      - name: Update major version tag
+        run: |
+          major_version="${{ steps.major_version.outputs.major_version }}"
+          echo "Updating major version tag: $major_version"
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Delete existing major version tag if it exists
+          git tag -d $major_version || true
+          git push origin :refs/tags/$major_version || true
+          
+          # Create new major version tag
+          git tag $major_version
+          git push origin $major_version
+      
+      - name: Output release info
+        run: |
+          echo "🎉 Released ${{ steps.version.outputs.version }}"
+          echo "📌 Major version tag updated: ${{ steps.major_version.outputs.major_version }}"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"

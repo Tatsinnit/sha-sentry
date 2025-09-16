@@ -1,0 +1,110 @@
+name: Example SHA Sentry Usage
+
+on:
+  schedule:
+    # Run every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode'
+        required: false
+        default: false
+        type: boolean
+      create_pr:
+        description: 'Create pull request instead of direct commit'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sha-pin-actions:
+    runs-on: ubuntu-latest
+    name: SHA Pin GitHub Actions
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use a token that can create pull requests
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Fetch full history for better git operations
+          fetch-depth: 0
+      
+      - name: Run SHA Sentry
+        id: sha_sentry
+        uses: ./  # Use the action from current repository
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          create_pr: ${{ github.event.inputs.create_pr || 'true' }}
+          dry_run: ${{ github.event.inputs.dry_run || 'false' }}
+          pr_title: '🔒 Security: SHA-pin GitHub Actions'
+          pr_body: |
+            This pull request automatically SHA-pins all GitHub Actions in workflow files for enhanced security.
+            
+            ## 🛡️ Security Benefits
+            - ✅ Prevents supply chain attacks
+            - ✅ Ensures reproducible builds  
+            - ✅ Follows security best practices
+            
+            ## 📊 Summary
+            - **Files Updated**: ${{ steps.sha_sentry.outputs.files_updated }}
+            - **Actions Pinned**: ${{ steps.sha_sentry.outputs.actions_pinned }}
+            
+            ## 🔍 Review Notes
+            Please review the changes to ensure all pinned actions are correct and from trusted sources.
+            
+            ---
+            *This PR was created automatically by [SHA Sentry](https://github.com/your-org/sha-sentry)*
+          exclude_patterns: 'actions/checkout@v4'  # Example: exclude specific actions
+          commit_message: '🔒 chore: SHA-pin GitHub Actions for enhanced security'
+      
+      - name: Print Summary
+        if: always()
+        run: |
+          echo "## SHA Sentry Results 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Changes Made**: ${{ steps.sha_sentry.outputs.changes_made }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files Updated**: ${{ steps.sha_sentry.outputs.files_updated }}" >> $GITHUB_STEP_SUMMARY  
+          echo "- **Actions Pinned**: ${{ steps.sha_sentry.outputs.actions_pinned }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.sha_sentry.outputs.pr_number }}" != "" ]; then
+            echo "- **Pull Request**: #${{ steps.sha_sentry.outputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.sha_sentry.outputs.changes_made }}" == "true" ]; then
+            echo "✅ **Status**: Actions successfully pinned!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ **Status**: No changes needed - all actions already pinned" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Comment on PR (if created)
+        if: steps.sha_sentry.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.sha_sentry.outputs.pr_number }};
+            const comment = `
+            ## 🤖 SHA Sentry Report
+            
+            Successfully pinned **${{ steps.sha_sentry.outputs.actions_pinned }}** actions across **${{ steps.sha_sentry.outputs.files_updated }}** workflow files.
+            
+            ### What's Next?
+            1. 👀 Review the changes in this PR
+            2. ✅ Verify all pinned actions are from trusted sources  
+            3. 🚀 Merge to apply the security improvements
+            
+            *This comment was generated automatically by SHA Sentry*
+            `;
+            
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });
