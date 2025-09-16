@@ -1,0 +1,284 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.2.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+      create_tag:
+        description: 'Create git tag for this version'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Create Manual Release
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Validate version format
+        run: |
+          version="${{ inputs.version }}"
+          if [[ ! $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "❌ Invalid version format: $version"
+            echo "Expected format: v1.2.3 or v1.2.3-beta"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $version"
+      
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          version="${{ inputs.version }}"
+          if git rev-parse "$version" >/dev/null 2>&1; then
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Tag $version already exists"
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Tag $version does not exist"
+          fi
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          version="${{ inputs.version }}"
+          echo "Extracting changelog for version: $version"
+          
+          # Create a script to extract changelog section
+          cat > extract_changelog.js << 'EOF'
+          const fs = require('fs');
+          const version = process.argv[2];
+          
+          try {
+            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const lines = changelog.split('\n');
+            
+            let inTargetVersion = false;
+            let releaseNotes = [];
+            let versionPattern = new RegExp(`^## \\[${version.replace('v', '')}\\]`);
+            
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i];
+              
+              if (versionPattern.test(line)) {
+                inTargetVersion = true;
+                continue;
+              }
+              
+              if (inTargetVersion && line.startsWith('## [') && !versionPattern.test(line)) {
+                break;
+              }
+              
+              if (inTargetVersion) {
+                releaseNotes.push(line);
+              }
+            }
+            
+            if (releaseNotes.length === 0) {
+              console.log(`No changelog found for version ${version}`);
+              process.exit(1);
+            }
+            
+            // Clean up the notes
+            const cleanedNotes = releaseNotes
+              .map(line => line.trim())
+              .filter(line => line !== '')
+              .join('\n');
+            
+            console.log('Extracted changelog:');
+            console.log(cleanedNotes);
+            
+            // Write to file
+            fs.writeFileSync('release_notes_raw.md', cleanedNotes);
+            
+          } catch (error) {
+            console.error('Error extracting changelog:', error.message);
+            process.exit(1);
+          }
+          EOF
+          
+          node extract_changelog.js "$version"
+      
+      - name: Format release notes
+        id: format_notes
+        run: |
+          version="${{ inputs.version }}"
+          
+          # Create formatted release notes
+          cat > release_notes.md << EOF
+          ## 🛡️ SHA Sentry $version
+          
+          A GitHub Action that automatically scans and reports unpinned GitHub Actions in workflow files for enhanced security.
+          
+          ### 📋 Changes in this release
+          
+          $(cat release_notes_raw.md)
+          
+          ### 🚀 Quick Start
+          
+          \`\`\`yaml
+          - name: Run SHA Sentry Security Scan
+            uses: Tatsinnit/sha-sentry@$version
+            with:
+              github_token: \${{ secrets.GITHUB_TOKEN }}
+          \`\`\`
+          
+          ### 🔒 Security Benefits
+          
+          - 🛡️ **Supply Chain Protection**: Identifies unpinned actions that could be compromised
+          - 🔍 **Security Auditing**: Provides detailed reports of all action references
+          - 📊 **Compliance Reporting**: Helps maintain security best practices
+          - 🔐 **Zero Permissions**: Only requires read access to scan repositories
+          
+          ### 📖 Documentation
+          
+          - [📚 Complete Documentation](https://github.com/${{ github.repository }}/blob/$version/README.md)
+          - [⚡ Quick Start Guide](https://github.com/${{ github.repository }}/blob/$version/QUICK_START.md)
+          - [🔄 Release Guide](https://github.com/${{ github.repository }}/blob/$version/RELEASE_GUIDE.md)
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v1.0.0...$version
+          EOF
+          
+          echo "Release notes generated:"
+          cat release_notes.md
+          
+          echo "notes_file=release_notes.md" >> $GITHUB_OUTPUT
+      
+      - name: Create git tag
+        if: inputs.create_tag && steps.tag_check.outputs.tag_exists == 'false'
+        run: |
+          version="${{ inputs.version }}"
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          echo "Creating tag: $version"
+          git tag -a "$version" -m "Release $version"
+          git push origin "$version"
+          
+          echo "✅ Tag $version created and pushed"
+      
+      - name: Extract major version
+        id: major_version
+        run: |
+          version="${{ inputs.version }}"
+          major_version=$(echo $version | sed 's/v\([0-9]*\).*/v\1/')
+          echo "major_version=$major_version" >> $GITHUB_OUTPUT
+          echo "Major version: $major_version"
+      
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.version }}
+          release_name: SHA Sentry ${{ inputs.version }}
+          body_path: ${{ steps.format_notes.outputs.notes_file }}
+          draft: false
+          prerelease: ${{ inputs.prerelease }}
+      
+      - name: Update major version tag
+        if: inputs.create_tag && !inputs.prerelease
+        run: |
+          major_version="${{ steps.major_version.outputs.major_version }}"
+          version="${{ inputs.version }}"
+          
+          echo "Updating major version tag: $major_version to point to $version"
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Delete existing major version tag if it exists
+          git tag -d "$major_version" 2>/dev/null || true
+          git push origin ":refs/tags/$major_version" 2>/dev/null || true
+          
+          # Create new major version tag pointing to the same commit as the full version
+          git tag "$major_version" "$version"
+          git push origin "$major_version"
+          
+          echo "✅ Major version tag $major_version updated"
+      
+      - name: Run SHA Sentry on itself (self-test)
+        uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          exclude_patterns: '.github/workflows/release.yml'
+      
+      - name: Output release information
+        run: |
+          version="${{ inputs.version }}"
+          major_version="${{ steps.major_version.outputs.major_version }}"
+          release_url="${{ steps.create_release.outputs.html_url }}"
+          
+          echo "🎉 **Release Created Successfully!**"
+          echo ""
+          echo "📋 **Release Details:**"
+          echo "  • Version: $version"
+          echo "  • Major Version Tag: $major_version"
+          echo "  • Pre-release: ${{ inputs.prerelease }}"
+          echo "  • Tag Created: ${{ inputs.create_tag }}"
+          echo ""
+          echo "🔗 **Links:**"
+          echo "  • Release URL: $release_url"
+          echo "  • Compare Changes: https://github.com/${{ github.repository }}/compare/v1.0.0...$version"
+          echo ""
+          echo "✅ Release $version is now available!"
+          
+          # Add to step summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🎉 Release $version Created!
+          
+          ### 📋 Release Details
+          - **Version**: $version  
+          - **Major Version Tag**: $major_version
+          - **Pre-release**: ${{ inputs.prerelease }}
+          - **Tag Created**: ${{ inputs.create_tag }}
+          
+          ### 🔗 Quick Links
+          - [📦 View Release]($release_url)
+          - [📊 Compare Changes](https://github.com/${{ github.repository }}/compare/v1.0.0...$version)
+          - [📖 Documentation](https://github.com/${{ github.repository }}/blob/$version/README.md)
+          
+          ### 🚀 Usage
+          \`\`\`yaml
+          - uses: Tatsinnit/sha-sentry@$version
+            with:
+              github_token: \${{ secrets.GITHUB_TOKEN }}
+          \`\`\`
+          EOF

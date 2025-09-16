@@ -254,6 +254,10 @@ jobs:
       // Docker actions should be skipped
       expect(shaSentry.shouldSkipAction('docker://alpine:latest')).toBe(true);
       
+      // Actions with GitHub expressions should be skipped
+      expect(shaSentry.shouldSkipAction('owner/repo@${{ steps.version.outputs.tag }}')).toBe(true);
+      expect(shaSentry.shouldSkipAction('actions/checkout@${{ env.VERSION }}')).toBe(true);
+      
       // GitHub actions should not be skipped
       expect(shaSentry.shouldSkipAction('actions/checkout@v4')).toBe(false);
     });
