@@ -27,8 +27,8 @@ jobs:
           fetch-depth: 1  # Shallow clone for faster checkout
       
       - name: Run SHA Sentry Security Scan
+        uses: Tatsinnit/sha-sentry@v3
         id: sha_audit
-        uses: ./  # Use the action from current repository
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           exclude_patterns: ${{ github.event.inputs.exclude_patterns }}
