@@ -17,7 +17,15 @@ A GitHub Action that automatically SHA-pins all GitHub Actions in your workflow 
 
 ## 🚀 Quick Start
 
-Add this workflow to your repository (`.github/workflows/sha-sentry.yml`):
+**Important**: To process workflow files (the main purpose of SHA Sentry), you need a Personal Access Token.
+
+### Step 1: Create Personal Access Token
+1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate new token with `repo` and `workflow` scopes
+3. Add as repository secret named `PAT_TOKEN`
+
+### Step 2: Add Workflow
+Create `.github/workflows/sha-sentry.yml`:
 
 ```yaml
 name: SHA Pin Actions
@@ -32,15 +40,14 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      actions: write      # Required to modify workflow files
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: SHA Pin Actions
+      - name: SHA Pin Actions in Workflows
         uses: Tatsinnit/sha-sentry@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.PAT_TOKEN }}  # Required for workflow files
           create_pr: true
 ```
 
@@ -159,13 +166,46 @@ jobs:
 
 ## 🔍 Permissions Required
 
-The action needs the following permissions:
+SHA Sentry is designed to SHA-pin actions in workflow files. The default `GITHUB_TOKEN` cannot modify workflows for security reasons.
 
+### **Required Setup (Personal Access Token):**
+
+1. **Create a Personal Access Token:**
+   - Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Select scopes: `repo` and `workflow`
+   - Copy the generated token
+
+2. **Add PAT as Repository Secret:**
+   - Go to your repository Settings > Secrets and variables > Actions
+   - Click "New repository secret"
+   - Name: `PAT_TOKEN`
+   - Value: Your PAT token
+
+3. **Use in Workflow:**
 ```yaml
 permissions:
-  contents: write        # To commit changes or create branches
-  pull-requests: write   # To create pull requests (if create_pr: true)
-  actions: write         # To modify workflow files (recommended)
+  contents: write
+  pull-requests: write
+
+steps:
+  - uses: Tatsinnit/sha-sentry@v1
+    with:
+      github_token: ${{ secrets.PAT_TOKEN }}  # Required for workflow files
+      create_pr: true
+```
+
+### **Why PAT is Required:**
+- Workflow files contain the security-critical automation logic
+- GitHub prevents the default token from modifying workflows to prevent privilege escalation
+- SHA-pinning workflows requires the `workflow` permission that only PATs have
+
+### **Fallback - Skip Workflows (Not Recommended):**
+Only use this if you cannot create a PAT:
+```yaml
+- uses: Tatsinnit/sha-sentry@v1
+  with:
+    exclude_patterns: ".github/workflows"  # Defeats the main purpose
 ```
 
 ## 🏃‍♂️ Running Locally

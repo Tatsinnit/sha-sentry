@@ -20,7 +20,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  actions: write      # Required to modify workflow files
+  # Note: actions: write is NOT sufficient for workflow files
 
 jobs:
   sha-pin-actions:
@@ -31,38 +31,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Use a token that can create pull requests
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Fetch full history for better git operations
+          # Use PAT token for workflow file access
+          token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
       
-      - name: Run SHA Sentry
+      - name: Run SHA Sentry (Primary Purpose - Workflow Files)
         id: sha_sentry
         uses: ./  # Use the action from current repository
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # REQUIRED: PAT with workflow permissions to process .github/workflows/
+          github_token: ${{ secrets.PAT_TOKEN }}
           create_pr: ${{ github.event.inputs.create_pr || 'true' }}
           dry_run: ${{ github.event.inputs.dry_run || 'false' }}
-          pr_title: '🔒 Security: SHA-pin GitHub Actions'
+          pr_title: '🔒 Security: SHA-pin GitHub Actions in Workflows'
           pr_body: |
             This pull request automatically SHA-pins all GitHub Actions in workflow files for enhanced security.
             
             ## 🛡️ Security Benefits
-            - ✅ Prevents supply chain attacks
-            - ✅ Ensures reproducible builds  
-            - ✅ Follows security best practices
+            - ✅ Prevents supply chain attacks via tag manipulation
+            - ✅ Ensures reproducible builds with fixed commits
+            - ✅ Follows GitHub security best practices
             
-            ## 📊 Summary
+            ## 📊 Changes Made
             - **Files Updated**: ${{ steps.sha_sentry.outputs.files_updated }}
             - **Actions Pinned**: ${{ steps.sha_sentry.outputs.actions_pinned }}
             
-            ## 🔍 Review Notes
-            Please review the changes to ensure all pinned actions are correct and from trusted sources.
+            ## 🔍 What Was Pinned
+            Examples of changes made:
+            - `actions/checkout@v4` → `actions/checkout@8aca7672a9e6a874d8faa6b8f98a5212554c65cd`
+            - `actions/setup-node@v4` → `actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7`
             
             ---
             *This PR was created automatically by [SHA Sentry](https://github.com/Tatsinnit/sha-sentry)*
-          exclude_patterns: 'actions/checkout@v4'  # Example: exclude specific actions if needed
-          commit_message: '🔒 chore: SHA-pin GitHub Actions for enhanced security'
+          commit_message: '🔒 chore: SHA-pin GitHub Actions in workflows for enhanced security'
       
       - name: Print Summary
         if: always()
