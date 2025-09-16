@@ -31,7 +31,6 @@ jobs:
         id: sha_audit
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          exclude_patterns: ${{ github.event.inputs.exclude_patterns }}
       
       - name: Display Audit Summary
         if: always()
