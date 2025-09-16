@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Architecture pivoted to reporting-only mode for better security and permissions
 - Complete transformation from modification-based to audit-based approach
 
+## [3.0.0] - 2025-09-16
+
+- 📊 **Remove unwanted skip**: RRemoved `{{` 
+
+
 ## [2.0.0] - 2025-09-16
 
 ### BREAKING CHANGES
