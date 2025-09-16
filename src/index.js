@@ -168,12 +168,7 @@ class ShaSentry {
     if (actionRef.startsWith('docker://')) {
       return true;
     }
-    
-    // Skip actions with unresolved GitHub Actions expressions
-    if (actionRef.includes('${{')) {
-      return true;
-    }
-    
+
     return false;
   }
 
