@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Architecture pivoted to reporting-only mode for better security and permissions
 - Complete transformation from modification-based to audit-based approach
 
+## [5.0.0] - 2025-09-16
+
+### Changed
+- 🔖 Bumped package version to v5.0.0 and prepared release artifacts.
+- 🧾 Minor documentation and release housekeeping (no functional changes since v4.0.0).
+
+
 ## [4.0.0] - 2025-09-16
 
 ### Added
@@ -37,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - 🛡️ Increased audit coverage by discovering more workflow/action files; improves supply-chain visibility and reduces attack surface.
+
 
 ## [3.0.0] - 2025-09-16
 
@@ -107,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Follows GitHub Actions security best practices
 
 [unreleased]: https://github.com/Tatsinnit/sha-sentry/compare/v4.0.0...HEAD
+[5.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v5.0.0
 [4.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v4.0.0
 [3.0.0]: https://github.com/Tatsinnit/sha-sentry/releases/tag/v3.0.0
 [2.0.0]: https://github.com/Tatsinnit/sha-sentry/compare/v1.0.0...v2.0.0

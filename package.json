@@ -1,6 +1,6 @@
 {
   "name": "sha-sentry",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "Automatically SHA-pin all GitHub Actions in workflow files for enhanced security",
   "main": "src/index.js",
   "scripts": {
