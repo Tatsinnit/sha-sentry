@@ -178,6 +178,41 @@ jobs:
       expect(core.info).toHaveBeenCalledWith('✅ Already pinned: actions/checkout@8aca7672a9e6a874d8faa6b8f98a5212554c65cd');
       expect(core.info).toHaveBeenCalledWith(expect.stringContaining('🎉 Excellent! All actions are already SHA-pinned!'));
     });
+
+    it('should discover composite actions under .github/actions', async () => {
+      mockGlob.mockImplementation((pattern) => {
+        if (pattern === '.github/actions/**/action.yml') {
+          return Promise.resolve(['/test/.github/actions/cool/action.yml']);
+        }
+        return Promise.resolve([]);
+      });
+      
+      const shaSentry = new ShaSentry();
+      const files = await shaSentry.findWorkflowFiles();
+      expect(files).toEqual(['/test/.github/actions/cool/action.yml']);
+    });
+
+    it('should exclude files using glob-style patterns', async () => {
+      core.getInput.mockImplementation((input) => {
+        if (input === 'exclude_patterns') return '**/*.yml';
+        return input === 'github_token' ? 'fake-token' : '';
+      });
+      
+      mockGlob.mockImplementation((pattern) => {
+        if (pattern === '.github/workflows/**/*.yml' || pattern === '.github/workflows/*.yml' || pattern === '.github/actions/**/action.yml') {
+          return Promise.resolve([
+            '/test/.github/workflows/ci.yml',
+            '/test/.github/actions/cool/action.yml',
+          ]);
+        }
+        return Promise.resolve([]);
+      });
+      
+      const shaSentry = new ShaSentry();
+      const files = await shaSentry.findWorkflowFiles();
+      // Pattern '**/*.yml' should match both files and exclude them, so result empty
+      expect(files).toEqual([]);
+    });
   });
 
   describe('File pattern exclusion', () => {

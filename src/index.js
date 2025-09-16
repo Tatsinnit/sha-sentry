@@ -3,6 +3,7 @@ const github = require('@actions/github');
 const fs = require('fs').promises;
 const { glob } = require('glob');
 const yaml = require('yaml');
+const minimatch = require('minimatch');
 
 class ShaSentry {
   constructor() {
@@ -21,6 +22,8 @@ class ShaSentry {
       unpinnedActionsFound: 0,
       totalActions: 0
     };
+    // Track files excluded by user-provided patterns for reporting
+    this.excludedFiles = [];
   }
 
   async run() {
@@ -46,28 +49,58 @@ class ShaSentry {
   async findWorkflowFiles() {
     try {
       // Find all YAML files in .github/workflows and other common locations
+      // Include nested workflow files and composite actions; be
+      // case-insensitive to account for different file-extension casing.
       const patterns = [
+        '.github/workflows/**/*.yml',
+        '.github/workflows/**/*.yaml',
         '.github/workflows/*.yml',
         '.github/workflows/*.yaml',
+        '.github/actions/**/action.yml',
+        '.github/actions/**/action.yaml',
         'action.yml',
         'action.yaml'
       ];
       
       let allFiles = [];
       for (const pattern of patterns) {
+        // Use nocase to match .yml/.YML on case-sensitive file systems
         const files = await glob(pattern, { 
           dot: true,
-          absolute: true 
+          absolute: true,
+          nocase: true
         });
         allFiles = allFiles.concat(files);
       }
       
-      // Filter out excluded patterns
+      // Filter out excluded patterns using glob-style matching when possible
       const filteredFiles = allFiles.filter(file => {
-        return !this.excludePatterns.some(pattern => {
-          const relativePath = file.replace(process.cwd() + '/', '');
-          return relativePath.includes(pattern);
-        });
+        const relativePath = file.replace(process.cwd() + '/', '');
+        if (!this.excludePatterns || this.excludePatterns.length === 0) return true;
+
+        for (const pattern of this.excludePatterns) {
+          // Try glob-style match first (supports patterns like 'docs/**' or '*.yml')
+          try {
+            if (minimatch(relativePath, pattern, { dot: true, nocase: true })) {
+              this.excludedFiles.push({ file: relativePath, pattern });
+              return false; // excluded
+            }
+          } catch (e) {
+            // If minimatch fails for any reason, fallback to substring match
+            if (relativePath.includes(pattern)) {
+              this.excludedFiles.push({ file: relativePath, pattern });
+              return false;
+            }
+          }
+
+          // Fallback substring check to support simple patterns
+          if (relativePath.includes(pattern)) {
+            this.excludedFiles.push({ file: relativePath, pattern });
+            return false;
+          }
+        }
+
+        return true;
       });
       
       return filteredFiles;
@@ -249,6 +282,16 @@ class ShaSentry {
     
     let reportMarkdown = '# 🛡️ SHA Sentry Report\n\n';
     reportMarkdown += `**Summary:** Found ${this.stats.unpinnedActionsFound} unpinned actions across ${this.findings.length} files\n\n`;
+    
+    // Include information about files that were excluded by user-provided patterns
+    if (this.excludedFiles && this.excludedFiles.length > 0) {
+      core.info(`Excluded files (${this.excludedFiles.length}): ${this.excludedFiles.map(e => e.file).join(', ')}`);
+      reportMarkdown += '## 🚫 Excluded files\n\n';
+      for (const ex of this.excludedFiles) {
+        reportMarkdown += `- ${ex.file} — matched pattern: \`${ex.pattern}\`\n`;
+      }
+      reportMarkdown += '\n';
+    }
     
     for (const fileResult of this.findings) {
       core.info(`📄 File: ${fileResult.file}`);
